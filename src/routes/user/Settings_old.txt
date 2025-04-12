@@ -1,0 +1,257 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "@components/Button";
+import { usePocket, useUpdatePB } from "@/hooks";
+
+export default function Settings() {
+  const { user, pb } = usePocket();
+  const mutation = useUpdatePB();
+  let navigate = useNavigate();
+
+  // Initialize with fallback defaults
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [solvesPerHourGoal, setSolvesPerHourGoal] = useState("");
+  const [utcOffset, setUtcOffset] = useState("");
+  const [workdays, setWorkdays] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update state from user object when it's available
+  useEffect(() => {
+    if (user) {
+      if (user.startTime !== undefined) setStartTime(user.startTime);
+      if (user.endTime !== undefined) setEndTime(user.endTime);
+      if (user.solvesPerHourGoal !== undefined)
+        setSolvesPerHourGoal(user.solvesPerHourGoal);
+      if (user.utcOffset !== undefined) setUtcOffset(user.utcOffset);
+      if (user.workdays !== undefined && Array.isArray(user.workdays)) {
+        // This ensures we're starting with a clean state
+        setWorkdays([...new Set(user.workdays)].sort((a, b) => a - b));
+      }
+    }
+  }, [user]);
+
+  // Fixed function to handle workday selection/deselection
+  const handleWorkdayToggle = (day) => {
+    setWorkdays((prevWorkdays) => {
+      if (prevWorkdays.includes(day)) {
+        // Remove the day
+        return prevWorkdays.filter((d) => d !== day);
+      } else {
+        // Add the day and ensure it's sorted
+        return [...prevWorkdays, day].sort((a, b) => a - b);
+      }
+    });
+  };
+
+  // Helper function to convert decimal hours to HH:MM format for input
+  const hoursToTimeString = (hours) => {
+    const wholeHours = Math.floor(hours);
+    const minutes = Math.round((hours - wholeHours) * 60);
+    return `${wholeHours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  // Helper function to convert HH:MM format from input to decimal hours
+  const timeStringToHours = (timeString) => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours + minutes / 60;
+  };
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const inputParams = {
+        startTime,
+        endTime,
+        solvesPerHourGoal,
+        utcOffset,
+        workdays, // Use the state as-is, since we maintain it properly
+      };
+
+      console.log("Saving settings:", inputParams);
+
+      // Check if mutation exists before using it
+      if (mutation && mutation.mutateAsync) {
+        await mutation.mutateAsync({
+          id: user?.id,
+          ...inputParams,
+        });
+      } else {
+        // Fallback if mutation isn't available
+        console.log("Mutation not available, settings would be saved here");
+      }
+
+      navigate("/user"); // Navigate to dashboard after saving
+    } catch (error) {
+      console.error("Settings save error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const weekdays = {
+    sun: false,
+    mon: false,
+    tue: false,
+    wed: false,
+    thu: false,
+    fri: false,
+    sat: false,
+  };
+  return (
+    <div className="w-full max-w-md p-6 mx-auto">
+      <h1 className="mb-6 text-2xl font-bold">Settings</h1>
+      {user && (
+        <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="startTime" className="text-sm font-medium">
+              Start Time
+            </label>
+            <input
+              id="startTime"
+              className="p-2 bg-gray-700 border border-gray-600 rounded outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              type="time"
+              name="startTime"
+              value={hoursToTimeString(startTime)}
+              onChange={(event) =>
+                setStartTime(timeStringToHours(event.target.value))
+              }
+              required
+            />
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="endTime" className="text-sm font-medium">
+              End Time
+            </label>
+            <input
+              id="endTime"
+              className="p-2 bg-gray-700 border border-gray-600 rounded outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              type="time"
+              name="endTime"
+              value={hoursToTimeString(endTime)}
+              onChange={(event) =>
+                setEndTime(timeStringToHours(event.target.value))
+              }
+              required
+            />
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="solvesPerHourGoal" className="text-sm font-medium">
+              Solves Per Hour Goal
+            </label>
+            <input
+              id="solvesPerHourGoal"
+              className="p-2 bg-gray-700 border border-gray-600 rounded outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              type="number"
+              name="solvesPerHourGoal"
+              min="0"
+              step="0.1"
+              value={solvesPerHourGoal}
+              onChange={(event) =>
+                setSolvesPerHourGoal(parseFloat(event.target.value))
+              }
+              required
+            />
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="utcOffset" className="text-sm font-medium">
+              UTC Offset
+            </label>
+            <select
+              id="utcOffset"
+              className="p-2 bg-gray-700 border border-gray-600 rounded outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              name="utcOffset"
+              value={utcOffset}
+              onChange={(event) => setUtcOffset(parseInt(event.target.value))}
+              required
+            >
+              {Array.from({ length: 25 }, (_, i) => i - 12).map((offset) => (
+                <option key={offset} value={offset}>
+                  {offset >= 0 ? `+${offset}` : offset}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium">Workdays</label>
+
+            <div className="grid grid-cols-7 gap-2">
+              {weekdays.map((day) => {
+                const isSelected = workdays.includes(day.id);
+
+                return (
+                  <div key={day.id} className="relative">
+                    {/* Hidden checkbox input */}
+                    <input
+                      type="checkbox"
+                      id={`day-${day.id}`}
+                      checked={isSelected}
+                      onChange={() => {}}
+                      className="sr-only" // Visually hidden but accessible
+                    />
+
+                    {/* Clickable div styled as a button */}
+                    <label
+                      htmlFor={`day-${day.id}`}
+                      className={`
+                        block py-2 px-1 rounded cursor-pointer
+                        transition-all duration-200 text-center
+                        ${
+                          isSelected
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-600 hover:bg-gray-500 text-gray-300"
+                        }
+                      `}
+                      onClick={() => handleWorkdayToggle(day.id)}
+                    >
+                      <div className="font-medium text-sm">
+                        {day.name.slice(0, 3)}
+                      </div>
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="text-sm text-gray-400 mt-1">
+              Selected:{" "}
+              {workdays
+                .map((id) =>
+                  weekdays.find((day) => day.id === id)?.name.slice(0, 3)
+                )
+                .join(", ")}
+            </div>
+          </div>
+
+          <div className="flex flex-col mt-6 space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full px-4 py-2 font-medium transition-colors bg-green-600 rounded sm:w-auto hover:bg-green-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : "Save Settings"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full px-4 py-2 font-medium transition-colors bg-gray-600 rounded sm:w-auto hover:bg-gray-500"
+              onClick={() => navigate("/user")}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
