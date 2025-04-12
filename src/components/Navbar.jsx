@@ -29,6 +29,12 @@ export default function Navbar() {
             >
               Settings
             </Link>
+            <Button
+              className="hover:bg-gray-600 px-3 py-2 rounded transition-colors"
+              onClick={logout}
+            >
+              Log Out
+            </Button>
           </>
         ) : (
           <>
