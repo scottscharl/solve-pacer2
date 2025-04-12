@@ -11,14 +11,8 @@ const twoMinutesInMs = ms("2 minutes");
 export const PocketContext = React.createContext({});
 
 export const PocketProvider = ({ children }) => {
-  // Add explicit logging
-  console.log("VITE_PB_URL from env:", import.meta.env.VITE_PB_URL);
-
   const pb = React.useMemo(() => {
-    const client = new PocketBase(BASE_URL);
-    // Log the actual URL being used by the client
-    console.log("PocketBase actual URL:", client.baseUrl);
-    return client;
+    return new PocketBase(BASE_URL);
   }, []);
 
   pb.autoCancellation(false);
