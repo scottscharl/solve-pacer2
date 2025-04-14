@@ -7,6 +7,13 @@ export default function Dashboard() {
   const { data } = usePace();
   const [minutesRemaining, setMinutesRemaining] = useState(0);
 
+  // Update Document title when pace changes
+  useEffect(() => {
+    if (data) {
+      document.title = `${data.paceResults.weeklyPace}`;
+    }
+  }, [data.paceResults.weeklyPace]);
+
   // Update the countdown timer every minute
   useEffect(() => {
     if (!data) return;
