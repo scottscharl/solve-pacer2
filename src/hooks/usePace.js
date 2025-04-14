@@ -37,7 +37,8 @@ export function usePace() {
     queryKey: ["paceCalc"],
     queryFn: () => getPace(user),
     enabled: !!user,
-    refetchInterval: 60000,
+    refetchInterval: 120000,
+    refetchIntervalInBackground: true,
   });
 }
 
