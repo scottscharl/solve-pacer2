@@ -12,7 +12,7 @@ export default function Dashboard() {
     if (data) {
       document.title = `${data.paceResults.weeklyPace}`;
     }
-  }, [data.paceResults.weeklyPace]);
+  }, [data]);
 
   // Update the countdown timer every minute
   useEffect(() => {
