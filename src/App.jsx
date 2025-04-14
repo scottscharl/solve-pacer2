@@ -17,6 +17,7 @@ import SignUp from "@routes/auth/SignUp";
 import UserLayout from "@routes/user/UserLayout";
 import Dashboard from "@routes/user/Dashboard";
 import Settings from "@routes/user/Settings";
+import NotFound from "./routes/NotFound";
 
 export default function App() {
   return (
@@ -25,22 +26,20 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route element={<MainLayout />}>
-              {/* Public routes */}
               <Route element={<PublicOnlyRoute />}>
                 <Route index element={<LandingPage />} />
-                {/* Auth routes */}
                 <Route element={<AuthLayout />}>
                   <Route path="login" element={<Login />} />
                   <Route path="signup" element={<SignUp />} />
                 </Route>
               </Route>
-              {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
                 <Route path="user" element={<UserLayout />}>
                   <Route index element={<Dashboard />} />
                   <Route path="settings" element={<Settings />} />
                 </Route>
               </Route>
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </BrowserRouter>
